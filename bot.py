@@ -33,7 +33,7 @@ def fetch_deal():
 
 
 def build_affiliate_link(asin):
-    return f"https://www.amazon.in/dp/{asin}?tag={AMAZON_STORE_ID}"
+    return f"https://www.amazon.in/gp/product/{asin}?tag={AMAZON_STORE_ID}"
 
 
 def format_message(deal, link):
