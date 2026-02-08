@@ -2,6 +2,7 @@ import os
 import json
 import requests
 from datetime import datetime
+from deals_source import fetch_real_deals
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
@@ -22,35 +23,20 @@ def save_posted(data):
         json.dump(data, f)
 
 
-def fetch_deal():
-    # Demo static deal (stable – no broken link)
-    return {
-        "title": "Bluetooth Wireless Earbuds",
-        "price": "₹999",
-        "mrp": "₹1,999",
-        "asin": "B0C9J8RZ5M"
-    }
-
-
 def build_affiliate_link(asin):
     return f"https://www.amazon.in/gp/product/{asin}?tag={AMAZON_STORE_ID}"
 
 
-def format_message(deal, link):
-    discount = ""
-    try:
-        mrp = int(deal["mrp"].replace("₹", "").replace(",", ""))
-        price = int(deal["price"].replace("₹", "").replace(",", ""))
-        discount = f"{int(((mrp - price) / mrp) * 100)}% OFF"
-    except:
-        pass
+def is_valid_product(asin):
+    url = f"https://www.amazon.in/dp/{asin}"
+    r = requests.get(url, allow_redirects=True, timeout=15)
+    return r.status_code == 200 and "dog" not in r.url.lower()
 
+
+def format_message(asin, link):
     return (
-        "🔥 *Loot Baba Deal Alert!* 🔥\n\n"
-        f"🛍️ *{deal['title']}*\n\n"
-        f"💰 *Price:* {deal['price']}\n"
-        f"❌ *MRP:* {deal['mrp']}\n"
-        f"🎯 *Discount:* {discount}\n\n"
+        "🔥 *Loot Baba New Deal!* 🔥\n\n"
+        f"🛒 Amazon Product ASIN: `{asin}`\n\n"
         f"👉 *Buy Now:*\n{link}\n\n"
         "⚡ Limited Time Deal\n"
         "📦 Amazon Verified"
@@ -65,26 +51,29 @@ def send_to_telegram(text):
         "parse_mode": "Markdown",
         "disable_web_page_preview": False
     }
-    r = requests.post(url, json=payload, timeout=20)
-    r.raise_for_status()
+    requests.post(url, json=payload, timeout=20).raise_for_status()
 
 
 def main():
     posted = load_posted()
-    deal = fetch_deal()
+    asins = fetch_real_deals()
 
-    if deal["asin"] in posted:
-        print("Already posted. Skipping.")
-        return
+    for asin in asins:
+        if asin in posted:
+            continue
 
-    link = build_affiliate_link(deal["asin"])
-    message = format_message(deal, link)
-    send_to_telegram(message)
+        if not is_valid_product(asin):
+            continue
 
-    posted.append(deal["asin"])
-    save_posted(posted)
+        link = build_affiliate_link(asin)
+        message = format_message(asin, link)
+        send_to_telegram(message)
 
-    print("Posted successfully at", datetime.now())
+        posted.append(asin)
+        save_posted(posted)
+
+        print("Posted:", asin, datetime.now())
+        break
 
 
 if __name__ == "__main__":
