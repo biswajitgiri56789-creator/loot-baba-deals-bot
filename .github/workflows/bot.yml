@@ -3,7 +3,7 @@ name: Telegram Deal Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"   # প্রতি ১ ঘন্টায় একবার
+    - cron: "0 * * * *"
 
 jobs:
   run-bot:
@@ -18,7 +18,6 @@ jobs:
         with:
           python-version: "3.10"
 
-      # 🔽 এইখানেই dependency বসবে
       - name: Install dependencies
         run: |
           pip install requests beautifulsoup4
