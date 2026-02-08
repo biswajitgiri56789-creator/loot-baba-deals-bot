@@ -1,23 +1,23 @@
-deals = [
-    {
-        "id": "boat131",
-        "title": "Boat Airdopes 131",
-        "price": "₹899",
-        "mrp": "₹2990",
-        "link": "https://www.amazon.in/dp/B09MXYK6X8"
-    },
-    {
-        "id": "redmi9",
-        "title": "Redmi 9 Activ",
-        "price": "₹7,499",
-        "mrp": "₹9,999",
-        "link": "https://www.amazon.in/dp/B09G9FPGTN"
-    },
-    {
-        "id": "hp_mouse",
-        "title": "HP Wired Mouse",
-        "price": "₹299",
-        "mrp": "₹699",
-        "link": "https://www.amazon.in/dp/B07DJ9YG3H"
-    }
-]
+import requests
+from bs4 import BeautifulSoup
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0"
+}
+
+AMAZON_DEALS_URL = "https://www.amazon.in/gp/goldbox"
+
+
+def fetch_real_deals():
+    r = requests.get(AMAZON_DEALS_URL, headers=HEADERS, timeout=20)
+    r.raise_for_status()
+
+    soup = BeautifulSoup(r.text, "html.parser")
+    products = []
+
+    for item in soup.select("div[data-asin]"):
+        asin = item.get("data-asin")
+        if asin and len(asin) == 10:
+            products.append(asin)
+
+    return list(dict.fromkeys(products))  # unique ASINs
